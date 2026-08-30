@@ -20,7 +20,8 @@ Basic Manim animation project with standard Python project structure.
 
 ## Active Priorities
 - Basic project scaffolding complete
-- TestScene demonstrates core Manim concepts
+- TestScene demonstrates core Manim concepts + LaTeX math
+- CI/CD pipeline with GitHub Actions + Makefile
 
 ---
 
@@ -41,3 +42,19 @@ Basic Manim animation project with standard Python project structure.
 **Impact:** Working example scene rendering to media/videos/1080p60/TestScene.mp4
 **Validation:** `python main.py` renders successfully
 **Follow-ups:** Add more complex scenes, explore 3D, camera controls
+
+### 2026-08-30 - Makefile + CI/CD
+**Scope:** Developer experience / CI
+**Summary:** Added Makefile with targets (install, test, lint, format, run, clean, ci). Created GitHub Actions workflow (.github/workflows/ci.yml) running `make ci` on push/PR to main. Uses pip caching.
+**Why:** Automate quality checks, enable CI/CD
+**Impact:** `make ci` runs install→lint→test locally and in CI
+**Validation:** `make ci` passes locally
+**Follow-ups:** Add actual unit tests to tests/
+
+### 2026-08-30 - LaTeX/MathTex Support
+**Scope:** Scene enhancement
+**Summary:** Enabled MathTex rendering using system dvisvgm (MacTeX). Updated TestScene with Euler's identity, Gaussian integral, Basel problem formulas. Replaced Text with MathTex for math expressions.
+**Why:** Demonstrate LaTeX math rendering capability
+**Impact:** Professional math typesetting in animations
+**Validation:** `python main.py` renders all MathTex correctly
+**Follow-ups:** Explore custom LaTeX templates, 3D math rendering

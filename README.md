@@ -1,6 +1,6 @@
 # Manim Test Project
 
-A currently purposeless project to experiment with the creation of animations using Manim.
+A basic Manim animation project demonstrating core concepts including LaTeX math rendering.
 
 ## Setup
 
@@ -24,4 +24,17 @@ manim -pql main.py TestScene
 
 ## Scenes
 
-- `TestScene` - Demonstrates text, shapes, transforms, grouping, fading
+- `TestScene` - Demonstrates text, shapes, transforms, grouping, fading, **LaTeX math rendering**
+
+## CI/CD
+
+GitHub Actions workflow runs on push/PR to main:
+```bash
+make ci
+```
+Runs: install → lint (ruff) → test (pytest)
+
+## Requirements
+
+- Python 3.11+
+- LaTeX with dvisvgm (for MathTex) - MacTeX on macOS, TeX Live on Linux
