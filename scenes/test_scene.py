@@ -33,6 +33,24 @@ class TestScene(Scene):
         self.play(FadeOut(group), FadeOut(title))
         self.wait(0.5)
 
-        formula = Text("e^{iπ} + 1 = 0", font_size=72)
+        formula = MathTex(r"e^{i\pi} + 1 = 0", font_size=72)
         self.play(Write(formula))
         self.wait(1)
+
+        # More LaTeX examples
+        integrals = MathTex(
+            r"\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}",
+            font_size=60
+        ).next_to(formula, DOWN, buff=1)
+        self.play(Write(integrals))
+        self.wait(1)
+
+        sum_formula = MathTex(
+            r"\sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}",
+            font_size=60
+        ).next_to(integrals, DOWN, buff=0.8)
+        self.play(Write(sum_formula))
+        self.wait(1)
+
+        self.play(FadeOut(formula), FadeOut(integrals), FadeOut(sum_formula))
+        self.wait(0.5)
