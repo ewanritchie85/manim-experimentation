@@ -1,4 +1,5 @@
 from manim import *
+
 from scenes.test_scene import TestScene
 
 if __name__ == "__main__":
