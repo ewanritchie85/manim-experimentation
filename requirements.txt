@@ -21,8 +21,8 @@ pydub==0.25.1
 pyglet==2.1.16
 pyglm==2.8.3
 Pygments==2.21.0
-pyobjc-core==12.2.2
-pyobjc-framework-Cocoa==12.2.2
+pyobjc-core==12.2.2; sys_platform == "darwin"
+pyobjc-framework-Cocoa==12.2.2; sys_platform == "darwin"
 rich==15.0.0
 scipy==1.17.1
 screeninfo==0.8.1
