@@ -2,24 +2,18 @@ import sys
 
 from manim import *
 
-from scenes.maths_tour import MathShowcase
+from scenes.manim_maths_showcase import MathsShowcase
 from scenes.test_scene import TestScene
-from scenes.vector_field import VectorFieldCurlDivergence
 
 SCENES = {
     "test": TestScene,
-    "vector": VectorFieldCurlDivergence,
-    # alias with full class name and file stem
-    "vector-field": VectorFieldCurlDivergence,
-    "vector_field": VectorFieldCurlDivergence,
-    "curl": VectorFieldCurlDivergence,
-    "maths": MathShowcase,
-    "math": MathShowcase,
-    "tour": MathShowcase,
-    "maths_tour": MathShowcase,
-    "maths-tour": MathShowcase,
-    "showcase": MathShowcase,
-    "mathshowcase": MathShowcase,
+    "maths": MathsShowcase,
+    "math": MathsShowcase,
+    "manim_maths_showcase": MathsShowcase,
+    "manim-maths-showcase": MathsShowcase,
+    "showcase": MathsShowcase,
+    "mathsshowcase": MathsShowcase,
+    "mathshowcase": MathsShowcase,
 }
 
 if __name__ == "__main__":
@@ -33,7 +27,7 @@ if __name__ == "__main__":
         from pathlib import Path
 
         this = Path(__file__).resolve()
-        for sub in ("test", "vector", "maths"):
+        for sub in ("test", "maths"):
             print(f"Rendering {sub} in subprocess...")
             subprocess.run([sys.executable, str(this), sub], check=True)
     elif target in SCENES:
@@ -41,8 +35,7 @@ if __name__ == "__main__":
     else:
         available = ", ".join(sorted(SCENES)) + ", all"
         print(f"Unknown scene '{target}'. Available: {available}")
-        print("Usage: python main.py [test|vector|maths|all]")
+        print("Usage: python main.py [test|maths|all]")
         print("  or:  manim -pql scenes/test_scene.py TestScene")
-        print("  or:  manim -pql scenes/vector_field.py VectorFieldCurlDivergence")
-        print("  or:  manim -pql scenes/maths_tour.py MathShowcase")
+        print("  or:  manim -pql scenes/manim_maths_showcase.py MathsShowcase")
         sys.exit(1)

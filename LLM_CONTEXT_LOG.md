@@ -13,7 +13,7 @@ Basic Manim animation project with standard Python project structure.
 - Python 3.11+ with Manim 0.21.0
 - Virtual environment in `.venv/` (legacy `venv/` kept)
 - Dependencies in `requirements.txt`
-- Scenes: `TestScene` (feature tour) + `VectorFieldCurlDivergence` (curl/divergence) + `MathShowcase` (6-part tour: Pythagoras → differentiation → integration → Taylor → linear transform → vector field)
+- Scenes: `TestScene` (feature tour) + `MathsShowcase` (`scenes/manim_maths_showcase.py` — 6-part tour: Pythagoras → differentiation → integration → Taylor → linear transform → vector field curl/div)
 
 ## Safety + Auth Boundaries
 - No external APIs or secrets required
@@ -75,3 +75,19 @@ Basic Manim animation project with standard Python project structure.
 **Impact:** `make run` now renders 3 scenes in isolated subprocesses; `make run-maths`/`render-maths` for focused work; `make test` 12 passed; `make lint/format` clean.
 **Validation:** `ruff check .` pass, `pytest tests/ -v` 12 passed, spot `python -c` field_func + taylor calc + `python main.py maths --help` alias check.
 **Follow-ups:** Render full `MathShowcase` (~3 min) on CI opt-in; split segments for preview dev.
+
+### 2026-08-31 - Maths Showcase Refinements + Vector Field Removal
+**Scope:** Scene fixes + DX cleanup
+**Summary:** Renamed `scenes/maths_tour.py` → `scenes/manim_maths_showcase.py`, `MathShowcase` → `MathsShowcase` (UK spelling throughout: module docstring, intro `A Tour of Classic Maths Concepts, in Maths`, comments). Fixed `section_title()` to accept `MathTex`/`Mobject` subtitle (`use_math_subtitle` flag) and updated Pythagorean subtitle to `MathTex(r"a^2 + b^2 = c^2")`. Fixed `sq_c` to sit flush outward on hypotenuse via outward normal + rotation (`hyp_mid + n_out*c/2`, `theta=arctan2(h_vec)`). Fixed differentiation/integration overlaps via `next_to(..., DOWN)` stacking, moved `n_label` off `graph_label`, kept `limit_formula`/`integral_formula` at `to_edge(UP)` while alive. Replaced Lagrange `f'(x)` with Leibniz `\frac{dy}{dx}` / `\frac{\Delta y}{\Delta x}` in `limit_formula`, `secant_slope_label`, `slope_label`. Removed `outro()` and its `construct()` call. Deleted standalone `scenes/vector_field.py` and all mentions (`main.py` SCENES `vector`/`curl`, `Makefile` `run-vector`/`render-vector`, `README` scenes/run docs, `tests/test_basic.py` vector tests); `MathsShowcase.vector_field_curl_divergence` remains as tour segment 6.
+**Why:** Enforce UK spelling, correct LaTeX rendering and classic Pythagorean layout, prevent label collisions, use Leibniz notation, remove unwanted outro, deduplicate vector field (now only inside tour).
+**Impact:** `make run` now renders 2 scenes (`test` + `MathsShowcase`); `make run-maths`/`render-maths` updated to `manim_maths_showcase.py`; `make test` 8 passed (was 12); `make lint` clean; snapshot updated to `TestScene` + `MathsShowcase` only.
+**Validation:** `python -m py_compile` + `ruff check` pass; `pytest tests/ -v` 8 passed; `grep -R vector_field --exclude-dir=.venv` shows no standalone file refs; `manim -pql` dry-run and `python main.py maths` render 93 anims to `MathsShowcase.mp4`.
+**Follow-ups:** None — vector field now only via `MathsShowcase` segment 6.
+
+### 2026-08-31 - Top-Left Anchored Layout + Tour Alias Removal
+**Scope:** Scene layout + DX cleanup
+**Summary:** Added `MathsShowcase.top_left_stack(*mobjects, buff=0.25, corner_buff=0.4)` helper (VGroup arrange DOWN left-aligned to UL) and standardised all formula/label placement to UL. Shifted `Axes` in `differentiation` (`RIGHT*0.8+DOWN*0.3`), `integration` (`RIGHT*0.9+DOWN*0.3`), `taylor_series` (`scale 0.92` then `RIGHT*0.7+DOWN*0.3`) to keep UL quarter clear. Moved `differentiation` graph_label/limit_formula/secant_slope_label/slope_label into UL stack with fixed `next_to(..., DOWN).align_to(LEFT)` anchors for `always_redraw`; moved `integration` graph_label/integral_formula/n_label into UL stack and `ftc_formula` below `n_label` (UL, consistent with `det_label`); moved `taylor_series` sin label and `P_n(x)` labels to UL (`next_to(sin_label, DOWN, 0.25 + i*0.42)`). Left `linear_transformation` and `vector_field_curl_divergence` as-is (already UL or field-anchored). Removed intentionally-deleted aliases `tour`/`maths_tour`/`maths-tour` from `main.py` SCENES and `tests/test_basic.py` registry (now only `test`/`maths` required, vector/curl also asserted absent); trimmed `README` alias list to `math, showcase, manim_maths_showcase`.
+**Why:** Prevent any concurrent UL collision without buff/arrange, keep axes clear of text, maintain eyeline consistency across 2a/2b, align with single top-left convention.
+**Impact:** No two concurrent Mobjects share UL without `arrange`/`next_to` buff; `make run` still 2 scenes, `make test` 8 passed, `make lint` clean.
+**Validation:** `ruff check` pass; `pytest tests/ -v` 8 passed; manual code review of coordinates/anchors per section confirms no overlap.
+**Follow-ups:** None.

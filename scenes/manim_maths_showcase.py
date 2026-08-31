@@ -1,9 +1,8 @@
 """
-Manim capabilities showcase — a concise run-through of classic math concepts.
+Manim capabilities showcase — a concise run-through of classic maths concepts.
 
-
-Structure: one Scene (MathShowcase) whose construct() calls a sequence of
-self-contained segment methods, each demonstrating both a classic math idea
+Structure: one Scene (MathsShowcase) whose construct() calls a sequence of
+self-contained segment methods, each demonstrating both a classic maths idea
 and a different corner of Manim's toolkit:
 
     1. Pythagorean theorem      -> Transform, shape construction, area proof
@@ -15,7 +14,11 @@ and a different corner of Manim's toolkit:
 
 Each segment clears the scene before the next starts, so it plays as one
 continuous "tour" video. To render a single segment on its own while
-developing, comment out the other calls in MathShowcase.construct().
+developing, comment out the other calls in MathsShowcase.construct().
+
+Render examples:
+    manim -pql scenes/manim_maths_showcase.py MathsShowcase
+    manim -pql scenes/manim_maths_showcase.py MathsShowcase --format=mp4
 """
 
 import math
@@ -44,31 +47,54 @@ def _maths_field_func(point):
     return np.array([vx, vy, 0.0])
 
 
-class MathShowcase(Scene):
+class MathsShowcase(Scene):
     def construct(self):
-        self.section_title("A Tour of Classic Math Concepts, in Manim")
+        self.section_title("An overview of classic maths concepts, in Manim")
         self.pythagorean_theorem()
         self.differentiation()
         self.integration()
         self.taylor_series()
         self.linear_transformation()
         self.vector_field_curl_divergence()
-        self.outro()
 
     # ------------------------------------------------------------------
     # Shared helpers
     # ------------------------------------------------------------------
 
-    def section_title(self, text, subtitle=None, wait=1.5):
-        """Full-screen title card between segments."""
+    def top_left_stack(self, *mobjects, buff=0.25, corner_buff=0.4):
+        """Arrange mobjects in a vertical stack, left-aligned, anchored to
+        the top-left corner, with consistent spacing. Returns the VGroup so
+        callers can .play(Write(...)) on it or update individual children."""
+        group = VGroup(*mobjects).arrange(DOWN, aligned_edge=LEFT, buff=buff)
+        group.to_corner(UL, buff=corner_buff)
+        return group
+
+    def section_title(self, text, subtitle=None, wait=1.5, use_math_subtitle=False):
+        """Full-screen title card between segments.
+
+        subtitle may be:
+          - None
+          - a plain string (rendered with Text, or MathTex if use_math_subtitle=True)
+          - a Mobject (e.g. MathTex(r"a^2 + b^2 = c^2")) already constructed —
+            it will be positioned below the title.
+        """
         title = Text(text, font_size=40)
         group = VGroup(title)
-        if subtitle:
-            sub = Text(subtitle, font_size=24, color=GRAY_B)
-            sub.next_to(title, DOWN, buff=0.4)
+        sub = None
+        if subtitle is not None:
+            if isinstance(subtitle, Mobject):
+                sub = subtitle
+                # Ensure consistent positioning below title; caller can pre-style colour/size
+                sub.next_to(title, DOWN, buff=0.4)
+            elif use_math_subtitle:
+                sub = MathTex(subtitle, font_size=30, color=GRAY_B)
+                sub.next_to(title, DOWN, buff=0.4)
+            else:
+                sub = Text(subtitle, font_size=24, color=GRAY_B)
+                sub.next_to(title, DOWN, buff=0.4)
             group.add(sub)
         self.play(Write(title))
-        if subtitle:
+        if sub is not None:
             self.play(FadeIn(sub))
         self.wait(wait)
         self.play(FadeOut(group))
@@ -81,7 +107,10 @@ class MathShowcase(Scene):
     # ------------------------------------------------------------------
 
     def pythagorean_theorem(self):
-        self.section_title("1. The Pythagorean Theorem", "a^2 + b^2 = c^2")
+        self.section_title(
+            "1. The Pythagorean Theorem",
+            MathTex(r"a^2 + b^2 = c^2", font_size=32, color=GRAY_B),
+        )
 
         a, b = 2.0, 1.5
         c = np.hypot(a, b)
@@ -113,10 +142,24 @@ class MathShowcase(Scene):
         sq_b = Square(side_length=b, color=GREEN, fill_opacity=0.4)
         sq_b.next_to(triangle, RIGHT, buff=0).align_to(triangle, UP)
 
+        # Square on hypotenuse: one full edge flush against the hypotenuse,
+        # extending outward away from the triangle interior (classic diagram).
         sq_c = Square(side_length=c, color=RED, fill_opacity=0.4)
-        sq_c.move_to(triangle.get_vertices()[0:3:2].mean(axis=0))
-        sq_c.rotate(np.arctan2(b, a) + PI / 2)
-        sq_c.shift((sq_c.get_center() - triangle.get_center()) * 0.02)  # nudge clear
+        verts = triangle.get_vertices()
+        P0 = verts[0]
+        P2 = verts[2]
+        hyp_mid = (P0 + P2) / 2
+        h_vec = P2 - P0
+        c_len = np.linalg.norm(h_vec)
+        # outward normal (perpendicular to hypotenuse, pointing away from interior)
+        interior_pt = verts[1]
+        to_interior = interior_pt - hyp_mid
+        n1 = np.array([-h_vec[1], h_vec[0], 0]) / c_len
+        n_out = n1 if np.dot(n1[:2], to_interior[:2]) < 0 else -n1
+        theta = np.arctan2(h_vec[1], h_vec[0])
+        sq_c.rotate(theta)
+        c_center = hyp_mid + n_out * (c / 2)
+        sq_c.move_to(c_center)
 
         self.play(FadeIn(sq_a), FadeIn(sq_b), FadeIn(sq_c))
         self.wait(0.5)
@@ -145,23 +188,21 @@ class MathShowcase(Scene):
             y_range=[-1, 4, 1],
             x_length=8,
             y_length=5,
-        )
+        ).shift(RIGHT * 0.8 + DOWN * 0.3)
         f = lambda x: 0.4 * x**2
-        df = lambda x: 0.8 * x  # f'(x)
+        df = lambda x: 0.8 * x  # dy/dx
 
         graph = axes.plot(f, color=BLUE)
-        graph_label = MathTex("f(x) = 0.4x^2").next_to(
-            axes.c2p(2.2, f(2.2)), UR, buff=0.2
+        # Top-left anchored layout: graph_label and formulae share UL stack, clear of axes
+        graph_label = MathTex("f(x) = 0.4x^2", font_size=28)
+        limit_formula = MathTex(
+            r"\frac{dy}{dx} = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}",
+            font_size=30,
         )
-        self.play(Create(axes), Create(graph), Write(graph_label))
+        header = self.top_left_stack(graph_label, limit_formula)
+        self.play(Create(axes), Create(graph), Write(header))
 
         # --- 2a. Secant line shrinking to the tangent (the limit itself) ---
-        limit_formula = MathTex(
-            r"f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}",
-            font_size=34,
-        ).to_edge(UP)
-        self.play(Write(limit_formula))
-
         x0 = -1.5
         h_tracker = ValueTracker(2.0)
 
@@ -183,11 +224,15 @@ class MathShowcase(Scene):
 
         secant = always_redraw(secant_line)
 
+        # Fixed anchor below limit_formula, left-aligned, not dynamic arrange
         secant_slope_label = always_redraw(
             lambda: MathTex(
-                r"\frac{f(x_0+h)-f(x_0)}{h} = "
-                f"{(f(x0 + h_tracker.get_value()) - f(x0)) / h_tracker.get_value():.2f}"
-            ).to_corner(UR)
+                r"\frac{\Delta y}{\Delta x} = "
+                f"{(f(x0 + h_tracker.get_value()) - f(x0)) / h_tracker.get_value():.2f}",
+                font_size=28,
+            )
+            .next_to(limit_formula, DOWN, buff=0.25)
+            .align_to(limit_formula, LEFT)
         )
 
         self.play(
@@ -227,10 +272,14 @@ class MathShowcase(Scene):
 
         line = always_redraw(tangent_line)
 
+        # Eyeline stays consistent: slope_label where limit_formula was (below graph_label, UL)
         slope_label = always_redraw(
             lambda: MathTex(
-                f"f'({x_tracker.get_value():.1f}) = {df(x_tracker.get_value()):.1f}"
-            ).to_corner(UR)
+                rf"\frac{{dy}}{{dx}}\bigg|_{{x={x_tracker.get_value():.1f}}} = {df(x_tracker.get_value()):.1f}",
+                font_size=28,
+            )
+            .next_to(graph_label, DOWN, buff=0.25)
+            .align_to(graph_label, LEFT)
         )
 
         self.play(FadeOut(fixed_point), FadeIn(dot), Create(line), FadeIn(slope_label))
@@ -252,21 +301,19 @@ class MathShowcase(Scene):
             y_range=[0, 6, 1],
             x_length=8,
             y_length=5,
-        )
+        ).shift(RIGHT * 0.9 + DOWN * 0.3)
         f = lambda x: 0.5 * x**2 + 1
         F = lambda x: x**3 / 6 + x  # antiderivative, for the exact value
 
         graph = axes.plot(f, x_range=[0, 4], color=BLUE)
-        graph_label = MathTex("f(x) = 0.5x^2 + 1").next_to(
-            axes.c2p(3.3, f(3.3)), UR, buff=0.2
-        )
-        self.play(Create(axes), Create(graph), Write(graph_label))
-
+        graph_label = MathTex("f(x) = 0.5x^2 + 1", font_size=28)
         integral_formula = MathTex(
             r"\int_0^4 f(x)\,dx \approx \sum_{i} f(x_i)\,\Delta x",
-            font_size=34,
-        ).to_edge(UP)
-        self.play(Write(integral_formula))
+            font_size=30,
+        )
+        n_label = MathTex("n = 4", font_size=28)
+        header = self.top_left_stack(graph_label, integral_formula, n_label)
+        self.play(Create(axes), Create(graph), Write(header))
 
         # Riemann rectangles getting finer: 4 -> 8 -> 16 -> 32
         n_values = [4, 8, 16, 32]
@@ -278,8 +325,7 @@ class MathShowcase(Scene):
             fill_opacity=0.6,
             stroke_width=1,
         )
-        n_label = MathTex(f"n = {n_values[0]}").to_corner(UR)
-        self.play(FadeIn(rects), Write(n_label))
+        self.play(FadeIn(rects))
         self.wait(0.5)
 
         for n in n_values[1:]:
@@ -291,7 +337,9 @@ class MathShowcase(Scene):
                 fill_opacity=0.6,
                 stroke_width=0.5,
             )
-            new_label = MathTex(f"n = {n}").to_corner(UR)
+            new_label = MathTex(f"n = {n}", font_size=28).next_to(
+                integral_formula, DOWN, buff=0.25
+            ).align_to(integral_formula, LEFT)
             self.play(
                 Transform(rects, new_rects),
                 Transform(n_label, new_label),
@@ -302,12 +350,13 @@ class MathShowcase(Scene):
         self.wait(0.5)
 
         # Swap the rectangles for the exact shaded area and show the FTC result
+        # Place ftc_formula in same top-left stack, below n_label, consistent with det_label placement
         area = axes.get_area(graph, x_range=[0, 4], color=GREEN, opacity=0.5)
         exact_value = F(4) - F(0)
         ftc_formula = MathTex(
             r"\int_0^4 f(x)\,dx = F(4) - F(0) = " + f"{exact_value:.2f}",
-            font_size=32,
-        ).to_edge(DOWN)
+            font_size=28,
+        ).next_to(n_label, DOWN, buff=0.25).align_to(n_label, LEFT)
 
         self.play(FadeOut(rects), FadeIn(area))
         self.play(Write(ftc_formula))
@@ -327,12 +376,15 @@ class MathShowcase(Scene):
             y_range=[-2, 2, 1],
             x_length=9,
             y_length=5,
-        )
+        ).scale(0.92)
+        axes.shift(RIGHT * 0.7 + DOWN * 0.3)
         sine_graph = axes.plot(np.sin, color=BLUE)
         self.play(Create(axes), Create(sine_graph))
 
-        label = MathTex(r"\sin(x)", color=BLUE).next_to(axes.c2p(PI, np.sin(PI)), UP)
-        self.play(Write(label))
+        # Top-left stack for sin label + P_n labels (consistent with other sections)
+        sin_label = MathTex(r"\sin(x)", color=BLUE, font_size=30)
+        base_header = self.top_left_stack(sin_label)
+        self.play(Write(base_header))
         self.wait(0.5)
 
         def taylor_sin(x, n_terms):
@@ -351,11 +403,13 @@ class MathShowcase(Scene):
                 color=colors[i],
                 x_range=[-PI * 1.5, PI * 1.5],
             )
-            approx_label = (
-                MathTex(f"P_{{{2 * n_terms - 1}}}(x)", color=colors[i])
-                .to_corner(UR)
-                .shift(DOWN * 0.6 * i)
+            approx_label = MathTex(
+                f"P_{{{2 * n_terms - 1}}}(x)", color=colors[i], font_size=26
             )
+            # Stack below sin_label in top-left corner, fixed offsets so no overlap
+            approx_label.next_to(
+                sin_label, DOWN, buff=0.25 + i * 0.42
+            ).align_to(sin_label, LEFT)
 
             if current_approx is None:
                 self.play(Create(approx_graph), Write(approx_label))
@@ -502,7 +556,3 @@ class MathShowcase(Scene):
 
         self.wait(1)
         self.clear_scene()
-
-    # ------------------------------------------------------------------
-    def outro(self):
-        self.section_title("Manim: geometry, calculus, algebra, and fields", wait=2)

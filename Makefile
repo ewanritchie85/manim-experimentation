@@ -1,4 +1,4 @@
-.PHONY: env install system-deps test lint format run run-test run-vector run-maths render-test render-vector render-maths clean ci
+.PHONY: env install system-deps test lint format run run-test run-maths render-test render-maths clean ci
 
 env:
 	@if [ ! -d .venv ]; then \
@@ -61,9 +61,6 @@ run:
 run-test:
 	.venv/bin/python main.py test
 
-run-vector:
-	.venv/bin/python main.py vector
-
 run-maths:
 	.venv/bin/python main.py maths
 
@@ -71,11 +68,8 @@ run-maths:
 render-test:
 	.venv/bin/manim -pql scenes/test_scene.py TestScene
 
-render-vector:
-	.venv/bin/manim -pql scenes/vector_field.py VectorFieldCurlDivergence
-
 render-maths:
-	.venv/bin/manim -pql scenes/maths_tour.py MathShowcase
+	.venv/bin/manim -pql scenes/manim_maths_showcase.py MathsShowcase
 
 clean:
 	rm -rf __pycache__ .pytest_cache .ruff_cache .mypy_cache

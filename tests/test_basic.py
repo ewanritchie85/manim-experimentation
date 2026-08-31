@@ -30,68 +30,12 @@ def test_utils_importable():
     assert utils is not None
 
 
-def test_import_vector_field():
-    from scenes.vector_field import VectorFieldCurlDivergence, vector_field_func
-
-    assert VectorFieldCurlDivergence is not None
-    assert hasattr(VectorFieldCurlDivergence, "construct")
-    assert callable(vector_field_func)
-
-
-def test_vector_field_instantiation():
-    from scenes.vector_field import VectorFieldCurlDivergence
-
-    scene = VectorFieldCurlDivergence()
-    assert scene is not None
-    assert callable(getattr(scene, "construct", None))
-
-
-def test_vector_field_func_values():
-    import numpy as np
-
-    from scenes.vector_field import EPSILON, SOURCES, VORTICES, vector_field_func
-
-    # At far field, should be finite and 3D
-    v = vector_field_func(np.array([10.0, 10.0, 0.0]))
-    assert v.shape == (3,)
-    assert v[2] == 0.0
-    assert np.all(np.isfinite(v))
-
-    # At vortex centre, regularized by EPSILON — should not blow up
-    cx, cy, _ = VORTICES[0]
-    v_center = vector_field_func(np.array([cx, cy, 0.0]))
-    assert np.all(np.isfinite(v_center))
-
-    # At source centre, likewise finite
-    cx, cy, _ = SOURCES[0]
-    v_src = vector_field_func(np.array([cx, cy, 0.0]))
-    assert np.all(np.isfinite(v_src))
-
-    # Symmetry: opposite vortices have opposite curl sign contribution
-    # so field at top midpoint should have strong horizontal component
-    v_top = vector_field_func(np.array([0.0, 1.2, 0.0]))
-    assert np.isfinite(v_top[0]) and np.isfinite(v_top[1])
-
-    # EPSILON guards singularity
-    assert EPSILON > 0
-
-
-def test_vector_field_constants():
-    from scenes.vector_field import SOURCES, VORTICES
-
-    assert len(VORTICES) == 2
-    assert len(SOURCES) == 2
-    for tup in VORTICES + SOURCES:
-        assert len(tup) == 3
-        assert all(isinstance(x, (int, float)) for x in tup)
-
-
 def test_import_maths_tour():
-    from scenes.maths_tour import MathShowcase
+    from scenes.manim_maths_showcase import MathsShowcase
 
-    assert MathShowcase is not None
-    assert hasattr(MathShowcase, "construct")
-    # Each segment should be a method
+    assert MathsShowcase is not None
+    assert hasattr(MathsShowcase, "construct")
+    # Each segment should be a method (outro removed)
     for name in (
         "pythagorean_theorem",
         "differentiation",
@@ -101,16 +45,17 @@ def test_import_maths_tour():
         "vector_field_curl_divergence",
         "section_title",
         "clear_scene",
-        "outro",
     ):
-        assert hasattr(MathShowcase, name), f"missing {name}"
-        assert callable(getattr(MathShowcase, name))
+        assert hasattr(MathsShowcase, name), f"missing {name}"
+        assert callable(getattr(MathsShowcase, name))
+    # outro should no longer exist
+    assert not hasattr(MathsShowcase, "outro")
 
 
 def test_maths_tour_instantiation():
-    from scenes.maths_tour import MathShowcase
+    from scenes.manim_maths_showcase import MathsShowcase
 
-    scene = MathShowcase()
+    scene = MathsShowcase()
     assert scene is not None
     assert callable(getattr(scene, "construct", None))
 
@@ -118,9 +63,9 @@ def test_maths_tour_instantiation():
 def test_maths_tour_field_func():
     import numpy as np
 
-    from scenes.maths_tour import MathShowcase
+    from scenes.manim_maths_showcase import MathsShowcase
 
-    scene = MathShowcase()
+    scene = MathsShowcase()
     # field_func should be finite, 3D, regularized at centres
     v_far = scene.field_func(np.array([10.0, 10.0, 0.0]))
     assert v_far.shape == (3,)
@@ -143,12 +88,15 @@ def test_maths_tour_field_func():
 
 
 def test_main_scenes_registry():
-    # main.py SCENES should expose test, vector, maths aliases
+    # main.py SCENES should expose test, maths aliases
     import main
 
     assert hasattr(main, "SCENES")
-    for key in ("test", "vector", "maths", "tour", "maths_tour"):
+    for key in ("test", "maths"):
         assert key in main.SCENES
+    # ensure removed aliases are gone (tour/maths_tour intentionally removed, vector redundant)
+    for key in ("tour", "maths_tour", "maths-tour", "vector", "vector-field", "vector_field", "curl"):
+        assert key not in main.SCENES
     # all point to valid Scene subclasses
     for cls in set(main.SCENES.values()):
         assert hasattr(cls, "construct")
